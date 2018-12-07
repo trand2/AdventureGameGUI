@@ -32,7 +32,7 @@ public class Adventure extends Application {
 
     static Vector<Picture> pictureVector = new Vector<>();
 
-    BorderPane borderPane = new BorderPane();
+    static BorderPane borderPane = new BorderPane();
     /**
      * max row initializer.
      */
@@ -42,9 +42,9 @@ public class Adventure extends Application {
      */
     static int maxCols = 0;
 
-    static int positionRow = 1;
+    static int positionRow = 2;
 
-    static int positionCol = 1;
+    static int positionCol = 2;
 
     static int tileWidth = 0;
 
@@ -53,6 +53,10 @@ public class Adventure extends Application {
     static String itemMapFile;
 
     static TextArea textArea = new TextArea();
+
+    static GridPane gridPane = new GridPane();
+
+    static boolean imageExists = false;
 
     public void start(Stage primaryStage) throws FileNotFoundException {
         Button openBtn = new Button("Open");
@@ -79,68 +83,14 @@ public class Adventure extends Application {
                 e.printStackTrace();
             }
 
-            GridPane gridPane = new GridPane();
+            print5x5Map();
+
             gridPane.setPadding(new Insets(20, 20, 20, 20));
             gridPane.setMaxSize(60,60);
-            for (int row = 0; row < maxRows + 2; row++) {
-                ImageView imageView;
-                for (int col = 0; col < maxCols + 2; col++) {
-                    Image image = null;
-                    if (row == 1 && col == 1) {
-                        try {
-                            image = new Image(new FileInputStream(pictureVector.elementAt(6).image));
-                        } catch (FileNotFoundException e) {
-                            e.printStackTrace();
-                        }
-                    } else if (gameBoard[row][col].equals(pictureVector.elementAt(0).symbol)) {
-                        try {
-                            image = new Image(new FileInputStream(pictureVector.elementAt(0).image));
-                        } catch (FileNotFoundException e) {
-                            e.printStackTrace();
-                        }
-                    } else if (gameBoard[row][col].equals(pictureVector.elementAt(1).symbol)) {
-                        try {
-                            image = new Image(new FileInputStream(pictureVector.elementAt(1).image));
-                        } catch (FileNotFoundException e) {
-                            e.printStackTrace();
-                        }
-                    } else if (gameBoard[row][col].equals(pictureVector.elementAt(2).symbol)) {
-                        try {
-                            image = new Image(new FileInputStream(pictureVector.elementAt(2).image));
-                        } catch (FileNotFoundException e) {
-                            e.printStackTrace();
-                        }
-                    } else if (gameBoard[row][col].equals(pictureVector.elementAt(3).symbol)) {
-                        try {
-                            image = new Image(new FileInputStream(pictureVector.elementAt(3).image));
-                        } catch (FileNotFoundException e) {
-                            e.printStackTrace();
-                        }
-                    } else if (gameBoard[row][col].equals(pictureVector.elementAt(4).symbol)) {
-                        try {
-                            image = new Image(new FileInputStream(pictureVector.elementAt(4).image));
-                        } catch (FileNotFoundException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                    else if (gameBoard[row][col].equals(pictureVector.elementAt(5).symbol)) {
-                        try {
-                            image = new Image(new FileInputStream(pictureVector.elementAt(5).image));
-                        } catch (FileNotFoundException e) {
-                            e.printStackTrace();
-                        }
-                    } else if (gameBoard[row][col].equals(pictureVector.elementAt(6).symbol)) {
-                        try {
-                            image = new Image(new FileInputStream(pictureVector.elementAt(6).image));
-                        } catch (FileNotFoundException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                    gridPane.add(new ImageView(image), col, row);
-                }
-            }
+
             gridPane.setAlignment(Pos.CENTER);
             borderPane.setCenter(gridPane);
+            borderPane.getChildren().add(gridPane);
         });
 
         quitBtn.setOnAction(event -> {
@@ -152,11 +102,18 @@ public class Adventure extends Application {
             String[] text = textField.getText().split(" ");
             String inputs = text[0].toUpperCase();
             String direction = "";
-            if (text.length > 0) {
+            if (text.length > 1) {
                 direction = text[1].toUpperCase();
             }
 
             command(inputs, direction, text[0], text[1]);
+            textArea.appendText("\n");
+
+//            borderPane.getChildren().remove(gridPane);
+
+//            print5x5Map();
+
+//            borderPane.getChildren().add(gridPane);
         });
 
 
@@ -172,18 +129,22 @@ public class Adventure extends Application {
         Scanner scanner = new Scanner(new File(fileName));
         maxRows = scanner.nextInt();
         maxCols = scanner.nextInt();
-        gameBoard = new String[Adventure.maxRows + 2]
-                [Adventure.maxCols + 2];
-        for (int i = 0; i < maxRows + 2; i++) {
-            for (int j = 0; j < maxCols + 2; ++j) {
+        gameBoard = new String[maxRows]
+                [maxCols];
+        for (int i = 0; i < maxRows; i++) {
+            for (int j = 0; j < maxCols; ++j) {
                 scanner.useDelimiter("\\n|(?<=.)");
-                if (i >= 1 && j >= 1 && i <= maxRows
+//                if (i == 0 && j == 0) {
+//                    gameBoard[i][j] = "1";
+////                    System.out.print(gameBoard[i][j]);
+//                    scanner.next();
+                if (i >= 0 && j >= 0 && i <= maxRows
                         && j <= maxCols) {
                     gameBoard[i][j] = scanner.next();
-//                    System.out.print(Adventure.gameBoard[i][j]);
+//                    System.out.print(gameBoard[i][j]);
                 } else {
                     gameBoard[i][j] = "-";
-//                    System.out.print(Adventure.gameBoard[i][j]);
+//                    System.out.print(gameBoard[i][j]);
                 }
             }
 //            System.out.println();
@@ -216,66 +177,66 @@ public class Adventure extends Application {
     public static void command(final String inputs, final String direction, final String commandOriginal, final String directionOriginal) {
         if (inputs.startsWith("G")) {
             if (direction.equals("NORTH") || direction.startsWith("N")) {
-                if (Adventure.positionRow > 1) {
-                    Adventure.positionRow--;
+                if (positionRow > 1) {
+                    positionRow--;
                     textArea.appendText("Moving north...\nYou are at location "
                             + getLocation() + " in terrain "
-                            + Adventure.gameBoard[Adventure.positionRow]
-                            [Adventure.positionCol] + "\n");
-//                    print3by3map();
+                            + gameBoard[positionRow]
+                            [positionCol] + "\n");
+                    print5x5Map();
                 } else {
                     textArea.appendText("You can't go that far north."
                             + "\nYou are at location "
                             + getLocation() + " in terrain "
-                            + Adventure.gameBoard[Adventure.positionRow]
-                            [Adventure.positionCol] + "\n");
+                            + gameBoard[positionRow]
+                            [positionCol] + "\n");
                 }
             } else if (direction.equals("SOUTH")
                     || direction.startsWith("S")) {
-                if (Adventure.positionRow < Adventure.maxRows) {
-                    Adventure.positionRow++;
+                if (positionRow < maxRows) {
+                    positionRow++;
                     textArea.appendText("Moving south...\nYou are at location "
                             + getLocation() + " in terrain "
-                            + Adventure.gameBoard[Adventure.positionRow]
-                            [Adventure.positionCol] + "\n");
-//                    print3by3map();
+                            + gameBoard[positionRow]
+                            [positionCol] + "\n");
+                    print5x5Map();
                 } else {
                     textArea.appendText("You can't go that far south."
                             + "\nYou are at location "
                             + getLocation() + " in terrain "
-                            + Adventure.gameBoard[Adventure.positionRow]
-                            [Adventure.positionCol] + "\n");
+                            + gameBoard[positionRow]
+                            [positionCol] + "\n");
                 }
             } else if (direction.equals("WEST")
                     || direction.startsWith("W")) {
-                if (Adventure.positionCol > 1) {
-                    Adventure.positionCol--;
+                if (positionCol > 1) {
+                    positionCol--;
                     textArea.appendText("Moving west...\nYou are at location "
                             + getLocation() + " in terrain "
-                            + Adventure.gameBoard[Adventure.positionRow]
-                            [Adventure.positionCol] + "\n");
-//                    print3by3map();
+                            + gameBoard[positionRow]
+                            [positionCol] + "\n");
+                    print5x5Map();
                 } else {
                     textArea.appendText("You can't go that far west."
                             + "\nYou are at location "
                             + getLocation() + " in terrain "
-                            + Adventure.gameBoard[Adventure.positionRow]
-                            [Adventure.positionCol] + "\n");
+                            + gameBoard[positionRow]
+                            [positionCol] + "\n");
                 }
             } else if (direction.equals("EAST") || direction.startsWith("E")) {
-                if (Adventure.positionCol < Adventure.maxCols) {
-                    Adventure.positionCol++;
+                if (positionCol < maxCols) {
+                    positionCol++;
                     textArea.appendText("Moving east...\nYou are at location "
                             + getLocation() + " in terrain "
-                            + Adventure.gameBoard[Adventure.positionRow]
-                            [Adventure.positionCol] + "\n");
-//                    print3by3map();
+                            + gameBoard[positionRow]
+                            [positionCol] + "\n");
+                    print5x5Map();
                 } else {
                     textArea.appendText("You can't go that far east."
                             + "\nYou are at location "
                             + getLocation() + " in terrain "
-                            + Adventure.gameBoard[Adventure.positionRow]
-                            [Adventure.positionCol] + "\n");
+                            + gameBoard[positionRow]
+                            [positionCol] + "\n");
                 }
             } else {
                 textArea.appendText("Invalid command: " + commandOriginal
@@ -283,29 +244,102 @@ public class Adventure extends Application {
                         + "\nYou are at location "
                         + getLocation()
                         + " in terrain "
-                        + Adventure.gameBoard[Adventure.positionRow]
-                        [Adventure.positionCol] + "\n");
+                        + gameBoard[positionRow]
+                        [positionCol] + "\n");
             }
         } else if (inputs.startsWith("I")) {
             textArea.appendText("You are carrying:\nbrass lantern\nrope\n"
                     + "rations\nstaff\nYou are at location "
                     + getLocation() + " in terrain "
-                    + Adventure.gameBoard[Adventure.positionRow]
-                    [Adventure.positionCol] + "\n");
+                    + gameBoard[positionRow]
+                    [positionCol] + "\n");
         } else {
             textArea.appendText("Invalid command: " + commandOriginal
                     + " " + directionOriginal
                     + "\nYou are at location "
                     + getLocation()
                     + " in terrain "
-                    + Adventure.gameBoard[Adventure.positionRow]
-                    [Adventure.positionCol] + "\n");
+                    + gameBoard[positionRow]
+                    [positionCol] + "\n");
         }
     }
 
+    public static void print5x5Map() {
+        int count = 0;
+        for (int row = positionRow - 4; row < positionRow + 1; row++) {
+            for (int col = positionCol - 4; col < positionCol + 1; col++) {
+                Image image = null;
+                if (row == positionRow - 2 && col == positionCol - 2) {
+                    try {
+                        image = new Image(new FileInputStream(pictureVector.elementAt(6).image));
+                    } catch (FileNotFoundException e) {
+                        e.printStackTrace();
+                    }
+
+                } else if (row < 0 || col < 0) {
+                    try {
+                        image = new Image(new FileInputStream(pictureVector.elementAt(5).image));
+                    } catch (FileNotFoundException e) {
+                        e.printStackTrace();
+                    }
+                } else if (gameBoard[row][col].equals(pictureVector.elementAt(0).symbol)) {
+                    try {
+                        image = new Image(new FileInputStream(pictureVector.elementAt(0).image));
+                    } catch (FileNotFoundException e) {
+                        e.printStackTrace();
+                    }
+                } else if (gameBoard[row][col].equals(pictureVector.elementAt(1).symbol)) {
+                    try {
+                        image = new Image(new FileInputStream(pictureVector.elementAt(1).image));
+                    } catch (FileNotFoundException e) {
+                        e.printStackTrace();
+                    }
+                } else if (gameBoard[row][col].equals(pictureVector.elementAt(2).symbol)) {
+                    try {
+                        image = new Image(new FileInputStream(pictureVector.elementAt(2).image));
+                    } catch (FileNotFoundException e) {
+                        e.printStackTrace();
+                    }
+                } else if (gameBoard[row][col].equals(pictureVector.elementAt(3).symbol)) {
+                    try {
+                        image = new Image(new FileInputStream(pictureVector.elementAt(3).image));
+                    } catch (FileNotFoundException e) {
+                        e.printStackTrace();
+                    }
+                } else if (gameBoard[row][col].equals(pictureVector.elementAt(4).symbol)) {
+                    try {
+                        image = new Image(new FileInputStream(pictureVector.elementAt(4).image));
+                    } catch (FileNotFoundException e) {
+                        e.printStackTrace();
+                    }
+                }
+                else if (gameBoard[row][col].equals(pictureVector.elementAt(5).symbol)) {
+                    try {
+                        image = new Image(new FileInputStream(pictureVector.elementAt(5).image));
+                    } catch (FileNotFoundException e) {
+                        e.printStackTrace();
+                    }
+                } else if (gameBoard[row][col].equals(pictureVector.elementAt(6).symbol)) {
+                    try {
+                        image = new Image(new FileInputStream(pictureVector.elementAt(6).image));
+                    } catch (FileNotFoundException e) {
+                        e.printStackTrace();
+                    }
+                }
+                if (imageExists == true && count == 0) {
+                    gridPane.getChildren().clear();
+                    count++;
+                }
+                gridPane.add(new ImageView(image), col + 2, row + 2);
+            }
+        }
+        imageExists = true;
+        borderPane.getChildren().add(gridPane);
+    }
+
     public static String getLocation() {
-        int row = Adventure.positionRow - 1;
-        int col = Adventure.positionCol - 1;
+        int row = positionRow - 2 ;
+        int col = positionCol - 2;
         String location = row + "," + col;
         return location;
     }
@@ -313,22 +347,6 @@ public class Adventure extends Application {
 
 
     public static void main(String[] args) {
-//        Scanner input = new Scanner(System.in);
-//        Scanner input1 = new Scanner(System.in);
-//        String command = " ";
-//        String fileName = " ";
-//
-//        if (args.length > 0) {
-//            fileName = args[0];
-//        } else {
-//            fileName = input.next();
-//        }
-//        try {
-//            readTxt(fileName);
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
-
         launch(args);
     }
 }
