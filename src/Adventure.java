@@ -108,12 +108,6 @@ public class Adventure extends Application {
 
             command(inputs, direction, text[0], text[1]);
             textArea.appendText("\n");
-
-//            borderPane.getChildren().remove(gridPane);
-
-//            print5x5Map();
-
-//            borderPane.getChildren().add(gridPane);
         });
 
 
@@ -134,12 +128,7 @@ public class Adventure extends Application {
         for (int i = 0; i < maxRows; i++) {
             for (int j = 0; j < maxCols; ++j) {
                 scanner.useDelimiter("\\n|(?<=.)");
-//                if (i == 0 && j == 0) {
-//                    gameBoard[i][j] = "1";
-////                    System.out.print(gameBoard[i][j]);
-//                    scanner.next();
-                if (i >= 0 && j >= 0 && i <= maxRows
-                        && j <= maxCols) {
+                if (i <= maxRows && j <= maxCols) {
                     gameBoard[i][j] = scanner.next();
 //                    System.out.print(gameBoard[i][j]);
                 } else {
@@ -177,7 +166,7 @@ public class Adventure extends Application {
     public static void command(final String inputs, final String direction, final String commandOriginal, final String directionOriginal) {
         if (inputs.startsWith("G")) {
             if (direction.equals("NORTH") || direction.startsWith("N")) {
-                if (positionRow > 1) {
+                if (positionRow > 2) {
                     positionRow--;
                     textArea.appendText("Moving north...\nYou are at location "
                             + getLocation() + " in terrain "
@@ -193,7 +182,7 @@ public class Adventure extends Application {
                 }
             } else if (direction.equals("SOUTH")
                     || direction.startsWith("S")) {
-                if (positionRow < maxRows) {
+                if (positionRow < maxRows + 2) {
                     positionRow++;
                     textArea.appendText("Moving south...\nYou are at location "
                             + getLocation() + " in terrain "
@@ -209,7 +198,7 @@ public class Adventure extends Application {
                 }
             } else if (direction.equals("WEST")
                     || direction.startsWith("W")) {
-                if (positionCol > 1) {
+                if (positionCol > 2) {
                     positionCol--;
                     textArea.appendText("Moving west...\nYou are at location "
                             + getLocation() + " in terrain "
@@ -224,7 +213,7 @@ public class Adventure extends Application {
                             [positionCol] + "\n");
                 }
             } else if (direction.equals("EAST") || direction.startsWith("E")) {
-                if (positionCol < maxCols) {
+                if (positionCol < maxCols + 2) {
                     positionCol++;
                     textArea.appendText("Moving east...\nYou are at location "
                             + getLocation() + " in terrain "
