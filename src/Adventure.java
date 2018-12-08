@@ -11,7 +11,6 @@ import javafx.scene.control.ToolBar;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Pane;
@@ -66,6 +65,8 @@ public class Adventure extends Application {
 
     private static boolean imageExists = false;
 
+    private static Vector<String> itemsCarrying = new Vector<>();
+
     public void start(Stage primaryStage) throws FileNotFoundException {
         Button openBtn = new Button("Open");
         Button saveBtn = new Button("Save");
@@ -93,7 +94,13 @@ public class Adventure extends Application {
 
             print5x5Map();
 
-            textArea.appendText("Welcome to the Adventure Game!\nWhat would you like your character to do?");
+            try {
+                readItemFile(itemMapFile);
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            }
+
+            textArea.appendText("Welcome to the Adventure Game!\nWhat would you like your character to do?\n\n");
 
             gridPane.setPadding(new Insets(20, 20, 20, 20));
             gridPane.setMaxSize(tileWidth, tileHeight);
@@ -111,25 +118,38 @@ public class Adventure extends Application {
         textField.setOnAction(event -> {
             textArea.appendText("> " + textField.getText() + "\n");
             String[] text = textField.getText().split(" ");
-            String inputs = text[0].toUpperCase();
-            String direction = "";
-            if (text.length > 1) {
-                direction = text[1].toUpperCase();
-            }
+            if (textField.getText().toUpperCase().startsWith("D")) {
+                if (itemsCarrying.size() == 0) {
+                textArea.appendText("You are carrying no items. Cannot drop.\n");
+                } else
+                    for (int i = 0; i < itemsCarrying.size(); i++) {
+                        String removeItem[] = textField.getText().split("a");
+                        if (itemsCarrying.elementAt(i) == removeItem[1]) {
+                            itemsCarrying.remove(i);
+                        }
+                }
 
-            command(inputs, direction, text[0], text[1]);
+            } else {
+                String inputs = text[0].toUpperCase();
+                String direction = "";
+                if (text.length > 1) {
+                    direction = text[1].toUpperCase();
+                }
+
+                command(inputs, direction);
+            }
             textArea.appendText("\n");
         });
 
         textField.setOnKeyPressed(e -> {
             if (e.getCode() == KeyCode.UP) {
-                command("GO", "NORTH", "Up", "Arrow");
+                command("GO", "NORTH");
             } else if (e.getCode() == KeyCode.DOWN) {
-                command("GO", "SOUTH", "Down", "Arrow");
+                command("GO", "SOUTH");
             } else if (e.getCode() == KeyCode.RIGHT) {
-                command("GO", "EAST", "Right", "Arrow");
+                command("GO", "EAST");
             } else if (e.getCode() == KeyCode.LEFT) {
-                command("GO", "WEST", "Left", "Arrow");
+                command("GO", "WEST");
             }
 
         });
@@ -192,15 +212,20 @@ public class Adventure extends Application {
         Scanner scanner = new Scanner(new File(fileName));
         for (int i = 0; i < 3; i++) {
             Items items = new Items();
-            items.row = scanner.nextInt();
-            items.col = scanner.nextInt();
-            items.item = scanner.next().replace(";", "");
+            String[] text = scanner.nextLine().split(";");
+
+            items.row = Integer.parseInt(text[0]);
+            items.col = Integer.parseInt(text[1]);
+            items.item = text[2];
+
+            itemVector.add(items);
         }
 
 
     }
 
-    public static void command(final String inputs, final String direction, final String commandOriginal, final String directionOriginal) {
+    public static void command(final String inputs, final String direction) {
+        itemCheck();
         if (inputs.startsWith("G")) {
             if (direction.equals("NORTH") || direction.startsWith("N")) {
                 if (positionRow > 2) {
@@ -265,8 +290,7 @@ public class Adventure extends Application {
                             [positionCol] + "\n");
                 }
             } else {
-                textArea.appendText("Invalid command: " + commandOriginal
-                        + " " + directionOriginal
+                textArea.appendText("Invalid command: "
                         + "\nYou are at location "
                         + getLocation()
                         + " in terrain "
@@ -274,29 +298,26 @@ public class Adventure extends Application {
                         [positionCol] + "\n");
             }
         } else if (inputs.startsWith("I")) {
-            textArea.appendText("You are carrying:\nbrass lantern\nrope\n"
-                    + "rations\nstaff\nYou are at location "
-                    + getLocation() + " in terrain "
-                    + gameBoard[positionRow]
-                    [positionCol] + "\n");
+            textArea.appendText("You are carrying: ");
+
+            for (int i = 0; i < itemsCarrying.size(); i++) {
+                textArea.appendText(itemsCarrying.elementAt(i) + ", ");
+            }
+
+            textArea.appendText("\nYou are at location "
+            + getLocation() + " in terrain "
+            + gameBoard[positionRow]
+            [positionCol] + "\n");
+
+        } else if (inputs.toUpperCase().startsWith("T")) {
+            addItem();
         } else {
-            textArea.appendText("Invalid command: " + commandOriginal
-                    + " " + directionOriginal
+            textArea.appendText("Invalid command: "
                     + "\nYou are at location "
                     + getLocation()
                     + " in terrain "
                     + gameBoard[positionRow]
                     [positionCol] + "\n");
-        }
-
-        for (int i = 0; i < itemVector.size(); i++) {
-            String itemsAtLocation = null;
-            if (positionRow == itemVector.elementAt(i).row && positionCol == itemVector.elementAt(i).col) {
-                itemsAtLocation += ", " + itemVector.elementAt(i).item;
-            }
-            if (itemsAtLocation != null) {
-                textArea.appendText("Items Found: \n" + itemsAtLocation);
-            }
         }
 
     }
@@ -378,6 +399,33 @@ public class Adventure extends Application {
         int col = positionCol - 2;
         String location = row + "," + col;
         return location;
+    }
+
+    static private int itemInVector = 0;
+    public static void itemCheck() {
+
+        String itemsAtLocation = "";
+        for (int i = 0; i < itemVector.size(); i++) {
+            if (positionRow + 1 == itemVector.elementAt(i).row && positionCol == itemVector.elementAt(i).col
+                    || positionRow == itemVector.elementAt(i).row && positionCol + 1 == itemVector.elementAt(i).col) {
+                itemsAtLocation += " " + itemVector.elementAt(i).item;
+                itemInVector = i;
+            }
+        }
+        if (!itemsAtLocation.equals("")) {
+            textArea.appendText("Items Found: \n" + itemsAtLocation + ". Would you like to take them?\n");
+            if (textArea.getText().equals("Take")) {
+                itemsCarrying.add(itemVector.elementAt(itemInVector).item);
+            }
+        }
+    }
+
+    public static void addItem() {
+        if(positionRow == itemVector.elementAt(itemInVector).row
+                && positionCol == itemVector.elementAt(itemInVector).col)
+        itemsCarrying.add(itemVector.elementAt(itemInVector).item);
+        else
+            textArea.appendText("\nNo item found here.\n");
     }
 
 
