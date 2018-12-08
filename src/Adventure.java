@@ -10,6 +10,8 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.ToolBar;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Pane;
@@ -28,35 +30,41 @@ public class Adventure extends Application {
     /**
      * intialize game board array.
      */
-    static String[][] gameBoard;
+    private static String[][] gameBoard;
 
-    static Vector<Picture> pictureVector = new Vector<>();
+    private static Vector<Picture> pictureVector = new Vector<>();
 
-    static BorderPane borderPane = new BorderPane();
+    private static Vector<Items> itemVector = new Vector<>();
+
+    private static BorderPane borderPane = new BorderPane();
     /**
      * max row initializer.
      */
-    static int maxRows = 0;
+    private static int maxRows = 0;
     /**
      * max col initializer.
      */
-    static int maxCols = 0;
+    private static int maxCols = 0;
 
-    static int positionRow = 2;
+    private static int positionRow = 2;
 
-    static int positionCol = 2;
+    private static int positionCol = 2;
 
-    static int tileWidth = 0;
+    private static int itemPositionRow = 2;
 
-    static int tileHeight = 0;
+    private static int itemPositionCol = 2;
 
-    static String itemMapFile;
+    private static int tileWidth = 0;
 
-    static TextArea textArea = new TextArea();
+    private static int tileHeight = 0;
 
-    static GridPane gridPane = new GridPane();
+    private static String itemMapFile;
 
-    static boolean imageExists = false;
+    private static TextArea textArea = new TextArea();
+
+    private static GridPane gridPane = new GridPane();
+
+    private static boolean imageExists = false;
 
     public void start(Stage primaryStage) throws FileNotFoundException {
         Button openBtn = new Button("Open");
@@ -78,19 +86,22 @@ public class Adventure extends Application {
             File file = fileChooser.showOpenDialog(pane.getScene().getWindow());
             String filepath = file.getAbsolutePath();
             try {
-                readTxt(filepath);
+                readMapFile(filepath);
             } catch (IOException e) {
                 e.printStackTrace();
             }
 
             print5x5Map();
 
+            textArea.appendText("Welcome to the Adventure Game!\nWhat would you like your character to do?");
+
             gridPane.setPadding(new Insets(20, 20, 20, 20));
-            gridPane.setMaxSize(60,60);
+            gridPane.setMaxSize(tileWidth, tileHeight);
 
             gridPane.setAlignment(Pos.CENTER);
             borderPane.setCenter(gridPane);
             borderPane.getChildren().add(gridPane);
+
         });
 
         quitBtn.setOnAction(event -> {
@@ -110,6 +121,19 @@ public class Adventure extends Application {
             textArea.appendText("\n");
         });
 
+        textField.setOnKeyPressed(e -> {
+            if (e.getCode() == KeyCode.UP) {
+                command("GO", "NORTH", "Up", "Arrow");
+            } else if (e.getCode() == KeyCode.DOWN) {
+                command("GO", "SOUTH", "Down", "Arrow");
+            } else if (e.getCode() == KeyCode.RIGHT) {
+                command("GO", "EAST", "Right", "Arrow");
+            } else if (e.getCode() == KeyCode.LEFT) {
+                command("GO", "WEST", "Left", "Arrow");
+            }
+
+        });
+
 
         toolBar.getItems().addAll(openBtn, saveBtn, quitBtn);
         pane.getChildren().addAll(borderPane);
@@ -119,7 +143,7 @@ public class Adventure extends Application {
         primaryStage.show();
     }
 
-    public static void readTxt(final String fileName) throws IOException {
+    public static void readMapFile(final String fileName) throws IOException {
         Scanner scanner = new Scanner(new File(fileName));
         maxRows = scanner.nextInt();
         maxCols = scanner.nextInt();
@@ -150,6 +174,7 @@ public class Adventure extends Application {
 
         itemMapFile = scanner.nextLine();
 
+
         int counter = 0;
         while (counter <= 6) {
             Picture picture = new Picture();
@@ -161,6 +186,18 @@ public class Adventure extends Application {
             pictureVector.add(picture);
             ++counter;
         }
+    }
+
+    public static void readItemFile(String fileName) throws FileNotFoundException {
+        Scanner scanner = new Scanner(new File(fileName));
+        for (int i = 0; i < 3; i++) {
+            Items items = new Items();
+            items.row = scanner.nextInt();
+            items.col = scanner.nextInt();
+            items.item = scanner.next().replace(";", "");
+        }
+
+
     }
 
     public static void command(final String inputs, final String direction, final String commandOriginal, final String directionOriginal) {
@@ -217,8 +254,8 @@ public class Adventure extends Application {
                     positionCol++;
                     textArea.appendText("Moving east...\nYou are at location "
                             + getLocation() + " in terrain "
-                            + gameBoard[positionRow]
-                            [positionCol] + "\n");
+                            + gameBoard[positionRow - 2][positionCol - 2]
+                            + "\n");
                     print5x5Map();
                 } else {
                     textArea.appendText("You can't go that far east."
@@ -251,6 +288,17 @@ public class Adventure extends Application {
                     + gameBoard[positionRow]
                     [positionCol] + "\n");
         }
+
+        for (int i = 0; i < itemVector.size(); i++) {
+            String itemsAtLocation = null;
+            if (positionRow == itemVector.elementAt(i).row && positionCol == itemVector.elementAt(i).col) {
+                itemsAtLocation += ", " + itemVector.elementAt(i).item;
+            }
+            if (itemsAtLocation != null) {
+                textArea.appendText("Items Found: \n" + itemsAtLocation);
+            }
+        }
+
     }
 
     public static void print5x5Map() {
@@ -301,8 +349,7 @@ public class Adventure extends Application {
                     } catch (FileNotFoundException e) {
                         e.printStackTrace();
                     }
-                }
-                else if (gameBoard[row][col].equals(pictureVector.elementAt(5).symbol)) {
+                } else if (gameBoard[row][col].equals(pictureVector.elementAt(5).symbol)) {
                     try {
                         image = new Image(new FileInputStream(pictureVector.elementAt(5).image));
                     } catch (FileNotFoundException e) {
@@ -315,7 +362,7 @@ public class Adventure extends Application {
                         e.printStackTrace();
                     }
                 }
-                if (imageExists == true && count == 0) {
+                if (imageExists && count == 0) {
                     gridPane.getChildren().clear();
                     count++;
                 }
@@ -327,12 +374,11 @@ public class Adventure extends Application {
     }
 
     public static String getLocation() {
-        int row = positionRow - 2 ;
+        int row = positionRow - 2;
         int col = positionCol - 2;
         String location = row + "," + col;
         return location;
     }
-
 
 
     public static void main(String[] args) {
@@ -344,4 +390,10 @@ class Picture {
     String symbol = "";
     String type = "";
     String image = "";
+}
+
+class Items {
+    int row = 0;
+    int col = 0;
+    String item = "";
 }
